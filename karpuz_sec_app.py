@@ -1,280 +1,287 @@
 import streamlit as st
-import numpy as np
-import cv2
-from PIL import Image
 import plotly.graph_objects as go
 import plotly.express as px
-from karpuz_sec import (
-    analyze_color, analyze_shape, analyze_stem, analyze_field_spot,
-    analyze_webbing, analyze_size, analyze_defects, interpret_score, CRITERIA_WEIGHTS
-)
 
 # Sayfa konfigürasyonu
 st.set_page_config(
     page_title="🍉 Karpuz Lezzet Tahmini",
     page_icon="🍉",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # CSS stilleri
 st.markdown("""
 <style>
-    .main-header {
-        background: linear-gradient(90deg, #FF6B6B, #4ECDC4);
-        padding: 2rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
+    .hero-section {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 4rem 2rem;
+        border-radius: 20px;
+        margin-bottom: 3rem;
         text-align: center;
         color: white;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    .upload-section {
-        background: #f8f9fa;
-        padding: 1.5rem;
-        border-radius: 10px;
+    .feature-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         margin: 1rem 0;
         border-left: 5px solid #4ECDC4;
+        transition: transform 0.3s ease;
     }
-    .result-card {
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .cta-button {
+        background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
+        font-size: 1.2rem;
+        margin: 1rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    .stats-container {
+        display: flex;
+        justify-content: space-around;
+        margin: 2rem 0;
+    }
+    .stat-item {
+        text-align: center;
+        padding: 1rem;
+    }
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #4ECDC4;
+    }
+    .stat-label {
+        color: #666;
+        font-size: 1rem;
+    }
+    .how-it-works {
+        background: #f8f9fa;
+        padding: 3rem 2rem;
+        border-radius: 15px;
+        margin: 2rem 0;
+    }
+    .step-card {
         background: white;
         padding: 1.5rem;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         margin: 1rem 0;
+        text-align: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
     }
-    .score-high { color: #28a745; font-weight: bold; }
-    .score-medium { color: #ffc107; font-weight: bold; }
-    .score-low { color: #dc3545; font-weight: bold; }
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .step-number {
+        background: #4ECDC4;
         color: white;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Ana başlık
+# Hero Section
 st.markdown("""
-<div class="main-header">
-    <h1>🍉 Karpuz Lezzet Tahmini Uygulaması</h1>
-    <p>Yapay zeka destekli karpuz analizi ile lezzet tahmini yapın!</p>
+<div class="hero-section">
+    <h1 style="font-size: 3.5rem; margin-bottom: 1rem;">🍉 Karpuz Lezzet Tahmini</h1>
+    <p style="font-size: 1.5rem; margin-bottom: 2rem;">Yapay Zeka Destekli Karpuz Analizi</p>
+    <p style="font-size: 1.2rem; opacity: 0.9;">Fotoğrafınızı yükleyin, AI teknolojisi ile lezzet tahmini yapın!</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar
-with st.sidebar:
-    st.markdown("### 📸 Fotoğraf Yükleme")
-    st.markdown("Lütfen aşağıdaki fotoğrafları yükleyin:")
-    
-    image1 = st.file_uploader(
-        "1️⃣ Karpuzun genel görünüşü", 
-        type=["jpg", "jpeg", "png"], 
-        key="genel1",
-        help="Karpuzun tam görünüşünü içeren fotoğraf"
-    )
-    
-    image2 = st.file_uploader(
-        "2️⃣ Sapının net göründüğü bölge (isteğe bağlı)", 
-        type=["jpg", "jpeg", "png"], 
-        key="sap",
-        help="Sapın net göründüğü yakın çekim fotoğraf"
-    )
-    
-    image3 = st.file_uploader(
-        "3️⃣ Karpuzun ikinci genel görünüşü (isteğe bağlı)", 
-        type=["jpg", "jpeg", "png"], 
-        key="genel2",
-        help="Farklı açıdan çekilmiş genel görünüş"
-    )
-    
-    analyze_btn = st.button("🚀 Analiz Et", type="primary", use_container_width=True)
-    
-    if analyze_btn and not image1:
-        st.error("❌ Lütfen en az bir genel görünüş fotoğrafı yükleyin!")
+# İstatistikler
+col1, col2, col3, col4 = st.columns(4)
 
-# Ana içerik
-if analyze_btn and image1:
-    # Progress bar
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+with col1:
+    st.markdown("""
+    <div class="stat-item">
+        <div class="stat-number">7</div>
+        <div class="stat-label">Analiz Kriteri</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div class="stat-item">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">Ücretsiz</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div class="stat-item">
+        <div class="stat-number">⚡</div>
+        <div class="stat-label">Anında Sonuç</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col4:
+    st.markdown("""
+    <div class="stat-item">
+        <div class="stat-number">📱</div>
+        <div class="stat-label">Mobil Uyumlu</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Özellikler
+st.markdown("## 🚀 Özellikler")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown("""
+    <div class="feature-card">
+        <h3>🎨 Gelişmiş Renk Analizi</h3>
+        <p>Yeşil tonları ve homojenlik analizi ile karpuzun olgunluk seviyesini tespit eder.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    scores = {}
-    total_score = 0
-    total_weight = 0
+    st.markdown("""
+    <div class="feature-card">
+        <h3>🔵 Şekil Simetrisi</h3>
+        <p>Karpuzun şekil oranlarını analiz ederek kalite değerlendirmesi yapar.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    def pil_to_cv(img):
-        return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    st.markdown("""
+    <div class="feature-card">
+        <h3>🌿 Sap Durumu</h3>
+        <p>Sapın kuruluk ve kahverengi tonlarını analiz ederek tazelik kontrolü yapar.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+    <div class="feature-card">
+        <h3>🟡 Alan Lekesi</h3>
+        <p>Alt kısımdaki sarı/turuncu leke analizi ile olgunluk seviyesini belirler.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # 1. Genel Görünüş Analizi
-    status_text.text("🔍 1. Genel görünüş analizi yapılıyor...")
-    progress_bar.progress(20)
+    st.markdown("""
+    <div class="feature-card">
+        <h3>🕸️ Webbing Analizi</h3>
+        <p>Kahverengi ağsı izleri analiz ederek şeker içeriği tahmini yapar.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    if image1 is not None:
-        col1, col2 = st.columns([1, 2])
-        
-        with col1:
-            st.markdown("### 📸 Yüklenen Fotoğraflar")
-            pil_img1 = Image.open(image1).convert("RGB")
-            st.image(pil_img1, caption="Genel Görünüş", use_column_width=True)
-            
-            if image2:
-                pil_img2 = Image.open(image2).convert("RGB")
-                st.image(pil_img2, caption="Sap Bölgesi", use_column_width=True)
-            
-            if image3:
-                pil_img3 = Image.open(image3).convert("RGB")
-                st.image(pil_img3, caption="İkinci Görünüş", use_column_width=True)
-        
-        with col2:
-            st.markdown("### 📊 Analiz Sonuçları")
-            
-            cv_img1 = pil_to_cv(pil_img1)
-            
-            # Metrikler için container
-            metrics_container = st.container()
-            
-            with metrics_container:
-                for func, name, key in [
-                    (analyze_color, '🎨 Renk Analizi', 'color'),
-                    (analyze_shape, '🔵 Şekil Analizi', 'shape'),
-                    (analyze_field_spot, '🟡 Alan Lekesi', 'field_spot'),
-                    (analyze_webbing, '🕸️ Webbing', 'webbing'),
-                    (analyze_size, '📏 Boyut', 'size'),
-                    (analyze_defects, '⚠️ Anomali', 'defects')
-                ]:
-                    try:
-                        score, desc = func(cv_img1)
-                        scores[key] = (score, desc)
-                        
-                        # Metrik kartı
-                        st.markdown(f"""
-                        <div class="metric-card">
-                            <h4>{name}</h4>
-                            <p>{desc}</p>
-                            <strong>Puan: {score:.1f}</strong>
-                        </div>
-                        """, unsafe_allow_html=True)
-                        
-                    except Exception as e:
-                        scores[key] = (None, f"Bulunamadı: {e}")
-                        st.error(f"{name}: Bulunamadı")
-            
-            progress_bar.progress(50)
-            status_text.text("🔄 3. görünüş analizi yapılıyor...")
-            
-            # 3. fotoğraf ile ek analiz
-            if image3 is not None:
-                cv_img3 = pil_to_cv(pil_img3)
-                for func, name, key in [
-                    (analyze_color, '🎨 Renk Analizi (2)', 'color'),
-                    (analyze_shape, '🔵 Şekil Analizi (2)', 'shape'),
-                    (analyze_field_spot, '🟡 Alan Lekesi (2)', 'field_spot'),
-                    (analyze_webbing, '🕸️ Webbing (2)', 'webbing'),
-                    (analyze_size, '📏 Boyut (2)', 'size'),
-                    (analyze_defects, '⚠️ Anomali (2)', 'defects')
-                ]:
-                    try:
-                        score, desc = func(cv_img3)
-                        prev_score, _ = scores.get(key, (None, None))
-                        if prev_score is None or (score is not None and score > prev_score):
-                            scores[key] = (score, desc)
-                        st.info(f"{name}: {desc} (Puan: {score:.1f})")
-                    except Exception as e:
-                        st.warning(f"{name}: Bulunamadı")
-            
-            progress_bar.progress(75)
-            status_text.text("🌿 Sap analizi yapılıyor...")
-            
-            # Sap analizi
-            if image2 is not None:
-                try:
-                    pil_img2 = Image.open(image2).convert("RGB")
-                    cv_img2 = pil_to_cv(pil_img2)
-                    score, desc = analyze_stem(cv_img2)
-                    scores['stem'] = (score, desc)
-                    st.success(f"🌿 Sap Analizi: {desc} (Puan: {score:.1f})")
-                except Exception as e:
-                    scores['stem'] = (None, f"Bulunamadı: {e}")
-                    st.error("🌿 Sap: Bulunamadı")
-            else:
-                st.info("🌿 Sap analizi atlandı (fotoğraf yüklenmedi)")
-            
-            progress_bar.progress(90)
-            status_text.text("📊 Sonuçlar hesaplanıyor...")
-            
-            # Puanlama
-            for key, (score, desc) in scores.items():
-                if score is not None:
-                    total_score += score
-                    total_weight += CRITERIA_WEIGHTS[key]
-            
-            if total_weight > 0:
-                normalized_score = total_score / total_weight * 100
-            else:
-                normalized_score = 0
-            
-            progress_bar.progress(100)
-            status_text.text("✅ Analiz tamamlandı!")
-            
-            # Sonuç kartı
-            st.markdown("### 🎯 Final Sonuç")
-            
-            # Puan grafiği
-            fig = go.Figure(go.Indicator(
-                mode = "gauge+number+delta",
-                value = normalized_score,
-                domain = {'x': [0, 1], 'y': [0, 1]},
-                title = {'text': "Lezzet Puanı"},
-                delta = {'reference': 50},
-                gauge = {
-                    'axis': {'range': [None, 100]},
-                    'bar': {'color': "darkblue"},
-                    'steps': [
-                        {'range': [0, 45], 'color': "lightgray"},
-                        {'range': [45, 65], 'color': "yellow"},
-                        {'range': [65, 85], 'color': "orange"},
-                        {'range': [85, 100], 'color': "green"}
-                    ],
-                    'threshold': {
-                        'line': {'color': "red", 'width': 4},
-                        'thickness': 0.75,
-                        'value': 90
-                    }
-                }
-            ))
-            
-            fig.update_layout(height=300)
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Sonuç metni
-            result_text = interpret_score(normalized_score)
-            if normalized_score > 85:
-                st.success(f"## 🎉 {result_text}")
-            elif normalized_score > 65:
-                st.info(f"## 👍 {result_text}")
-            elif normalized_score > 45:
-                st.warning(f"## 🤔 {result_text}")
-            else:
-                st.error(f"## 😞 {result_text}")
-            
-            st.markdown(f"""
-            <div class="result-card">
-                <h3>📊 Detaylı Puanlama</h3>
-                <p><strong>Toplam Puan:</strong> <span class="score-{'high' if normalized_score > 85 else 'medium' if normalized_score > 65 else 'low'}">{normalized_score:.1f}/100</span></p>
-                <p><strong>Değerlendirme:</strong> {result_text}</p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    else:
-        st.warning("❌ Genel görünüş fotoğrafı yüklenmedi.")
+    st.markdown("""
+    <div class="feature-card">
+        <h3>⚠️ Anomali Tespiti</h3>
+        <p>Çatlak, çürük ve diğer kusurları tespit ederek kalite kontrolü yapar.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Nasıl Çalışır
+st.markdown("## 📋 Nasıl Çalışır?")
+
+st.markdown("""
+<div class="how-it-works">
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+        <div class="step-card" style="flex: 1; min-width: 200px; margin: 0.5rem;">
+            <div class="step-number">1</div>
+            <h4>📸 Fotoğraf Yükleyin</h4>
+            <p>Karpuzun genel görünüşünü, sapını ve farklı açılarını yükleyin</p>
+        </div>
+        <div class="step-card" style="flex: 1; min-width: 200px; margin: 0.5rem;">
+            <div class="step-number">2</div>
+            <h4>🤖 AI Analizi</h4>
+            <p>Yapay zeka algoritması 7 farklı kriteri analiz eder</p>
+        </div>
+        <div class="step-card" style="flex: 1; min-width: 200px; margin: 0.5rem;">
+            <div class="step-number">3</div>
+            <h4>📊 Sonuç Alın</h4>
+            <p>100 üzerinden puan ve detaylı lezzet tahmini alın</p>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Analiz Kriterleri
+st.markdown("## 🔍 Analiz Kriterleri")
+
+criteria_data = {
+    'Kriter': ['Renk Analizi', 'Şekil Simetrisi', 'Sap Durumu', 'Alan Lekesi', 'Webbing', 'Boyut', 'Anomali'],
+    'Ağırlık': [20, 15, 10, 25, 15, 5, 10],
+    'Açıklama': [
+        'Yeşil tonları ve homojenlik',
+        'Şekil oranları ve simetri',
+        'Sap kuruluk ve rengi',
+        'Alt kısım sarı/turuncu leke',
+        'Kahverengi ağsı izler',
+        'Görsel alan oranı',
+        'Çatlak ve kusur tespiti'
+    ]
+}
+
+# Gauge chart ile ağırlık gösterimi
+fig = go.Figure()
+
+for i, (criterion, weight) in enumerate(zip(criteria_data['Kriter'], criteria_data['Ağırlık'])):
+    fig.add_trace(go.Indicator(
+        mode="gauge+number",
+        value=weight,
+        title={'text': criterion},
+        domain={'x': [i/7, (i+1)/7], 'y': [0, 1]},
+        gauge={
+            'axis': {'range': [None, 30]},
+            'bar': {'color': "#4ECDC4"},
+            'steps': [
+                {'range': [0, 10], 'color': "lightgray"},
+                {'range': [10, 20], 'color': "yellow"},
+                {'range': [20, 30], 'color': "orange"}
+            ]
+        }
+    ))
+
+fig.update_layout(
+    height=300,
+    showlegend=False,
+    title="Analiz Kriterleri ve Ağırlıkları"
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+# CTA Buton
+st.markdown("""
+<div style="text-align: center; margin: 3rem 0;">
+    <div class="cta-button" style="cursor: pointer;" onclick="window.location.href='/Analiz'">
+        🚀 Analiz Yapmaya Başla
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Alternatif olarak Streamlit butonu
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    if st.button("🚀 Analiz Yapmaya Başla", type="primary", use_container_width=True):
+        st.switch_page("pages/Analiz.py")
 
 # Footer
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #666;">
-    <p>🍉 Karpuz Lezzet Tahmini Uygulaması | Yapay Zeka Destekli Analiz</p>
-    <p>Bu uygulama görsel analiz ile karpuz lezzetini tahmin etmeye çalışır.</p>
+<div style="text-align: center; color: #666; padding: 2rem;">
+    <h3>🍉 Karpuz Lezzet Tahmini Uygulaması</h3>
+    <p>Yapay Zeka Destekli Görsel Analiz Teknolojisi</p>
+    <p>Bu uygulama eğitim amaçlı geliştirilmiştir. Sonuçlar tahminidir.</p>
 </div>
 """, unsafe_allow_html=True) 
