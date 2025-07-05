@@ -145,49 +145,50 @@ with col4:
 # Özellikler
 st.markdown("## 🚀 Özellikler")
 
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
     st.markdown("""
-    <div class="feature-card">
-        <h3>🎨 Gelişmiş Renk Analizi</h3>
-        <p>Yeşil tonları ve homojenlik analizi ile karpuzun olgunluk seviyesini tespit eder.</p>
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">🎨 Renk Analizi</h4>
+        <p style="font-size: 0.9rem;">Yeşil tonları ve homojenlik analizi</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="feature-card">
-        <h3>🔵 Şekil Simetrisi</h3>
-        <p>Karpuzun şekil oranlarını analiz ederek kalite değerlendirmesi yapar.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="feature-card">
-        <h3>🌿 Sap Durumu</h3>
-        <p>Sapın kuruluk ve kahverengi tonlarını analiz ederek tazelik kontrolü yapar.</p>
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">🔵 Şekil Simetrisi</h4>
+        <p style="font-size: 0.9rem;">Şekil oranları ve kalite değerlendirmesi</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown("""
-    <div class="feature-card">
-        <h3>🟡 Alan Lekesi</h3>
-        <p>Alt kısımdaki sarı/turuncu leke analizi ile olgunluk seviyesini belirler.</p>
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">🌿 Sap Durumu</h4>
+        <p style="font-size: 0.9rem;">Kuruluk ve tazelik kontrolü</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="feature-card">
-        <h3>🕸️ Webbing Analizi</h3>
-        <p>Kahverengi ağsı izleri analiz ederek şeker içeriği tahmini yapar.</p>
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">🟡 Alan Lekesi</h4>
+        <p style="font-size: 0.9rem;">Alt kısım sarı/turuncu leke analizi</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">🕸️ Webbing</h4>
+        <p style="font-size: 0.9rem;">Kahverengi ağsı izler analizi</p>
     </div>
     """, unsafe_allow_html=True)
     
     st.markdown("""
-    <div class="feature-card">
-        <h3>⚠️ Anomali Tespiti</h3>
-        <p>Çatlak, çürük ve diğer kusurları tespit ederek kalite kontrolü yapar.</p>
+    <div class="feature-card" style="padding: 1rem; margin: 0.5rem 0;">
+        <h4 style="margin-bottom: 0.5rem;">⚠️ Anomali</h4>
+        <p style="font-size: 0.9rem;">Çatlak ve kusur tespiti</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -219,9 +220,11 @@ st.markdown("""
 # Analiz Kriterleri
 st.markdown("## 🔍 Analiz Kriterleri")
 
+import pandas as pd
+
 criteria_data = {
     'Kriter': ['Renk Analizi', 'Şekil Simetrisi', 'Sap Durumu', 'Alan Lekesi', 'Webbing', 'Boyut', 'Anomali'],
-    'Ağırlık': [20, 15, 10, 25, 15, 5, 10],
+    'Ağırlık (%)': [20, 15, 10, 25, 15, 5, 10],
     'Açıklama': [
         'Yeşil tonları ve homojenlik',
         'Şekil oranları ve simetri',
@@ -233,33 +236,8 @@ criteria_data = {
     ]
 }
 
-# Gauge chart ile ağırlık gösterimi
-fig = go.Figure()
-
-for i, (criterion, weight) in enumerate(zip(criteria_data['Kriter'], criteria_data['Ağırlık'])):
-    fig.add_trace(go.Indicator(
-        mode="gauge+number",
-        value=weight,
-        title={'text': criterion},
-        domain={'x': [i/7, (i+1)/7], 'y': [0, 1]},
-        gauge={
-            'axis': {'range': [None, 30]},
-            'bar': {'color': "#4ECDC4"},
-            'steps': [
-                {'range': [0, 10], 'color': "lightgray"},
-                {'range': [10, 20], 'color': "yellow"},
-                {'range': [20, 30], 'color': "orange"}
-            ]
-        }
-    ))
-
-fig.update_layout(
-    height=300,
-    showlegend=False,
-    title="Analiz Kriterleri ve Ağırlıkları"
-)
-
-st.plotly_chart(fig, use_container_width=True)
+df = pd.DataFrame(criteria_data)
+st.dataframe(df, use_container_width=True)
 
 # CTA Buton
 col1, col2, col3 = st.columns([1, 2, 1])

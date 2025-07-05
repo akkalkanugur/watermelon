@@ -236,7 +236,7 @@ if analyze_btn and image1:
             progress_bar.progress(100)
             status_text.text("✅ Analiz tamamlandı!")
             
-            # Sonuç kartı
+            # Final Sonuç - Üstte
             st.markdown("### 🎯 Final Sonuç")
             
             # Puan grafiği
@@ -277,9 +277,28 @@ if analyze_btn and image1:
             else:
                 st.error(f"## 😞 {result_text}")
             
+            # Detaylı sonuçlar - Sonda
+            st.markdown("---")
+            st.markdown("### 📊 Detaylı Analiz Sonuçları")
+            
+            # Sonuçları tablo halinde göster
+            result_data = []
+            for key, (score, desc) in scores.items():
+                if score is not None:
+                    result_data.append({
+                        "Kriter": key.replace('_', ' ').title(),
+                        "Puan": f"{score:.1f}",
+                        "Açıklama": desc
+                    })
+            
+            if result_data:
+                import pandas as pd
+                df = pd.DataFrame(result_data)
+                st.dataframe(df, use_container_width=True)
+            
             st.markdown(f"""
             <div class="result-card">
-                <h3>📊 Detaylı Puanlama</h3>
+                <h3>📈 Özet</h3>
                 <p><strong>Toplam Puan:</strong> <span class="score-{'high' if normalized_score > 85 else 'medium' if normalized_score > 65 else 'low'}">{normalized_score:.1f}/100</span></p>
                 <p><strong>Değerlendirme:</strong> {result_text}</p>
             </div>
