@@ -72,7 +72,7 @@ st.markdown("""
 col1, col2, col3 = st.columns([1, 2, 1])
 with col1:
     if st.button("← Ana Sayfaya Dön", type="secondary"):
-        st.switch_page("karpuz_sec_app.py")
+        st.switch_page("/")
 
 # Ana başlık
 st.markdown("""

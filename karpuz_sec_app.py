@@ -262,15 +262,6 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # CTA Buton
-st.markdown("""
-<div style="text-align: center; margin: 3rem 0;">
-    <div class="cta-button" style="cursor: pointer;" onclick="window.location.href='/Analiz'">
-        🚀 Analiz Yapmaya Başla
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-# Alternatif olarak Streamlit butonu
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if st.button("🚀 Analiz Yapmaya Başla", type="primary", use_container_width=True):
