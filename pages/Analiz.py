@@ -236,8 +236,43 @@ if analyze_btn and image1:
             progress_bar.progress(100)
             status_text.text("✅ Analiz tamamlandı!")
             
-            # Final Sonuç - Üstte
-            st.markdown("### 🎯 Final Sonuç")
+            # Final Sonuç - Ana Bölüm
+            st.markdown("## 🎯 Final Sonuç")
+            
+            # Lezzet durumu kartı
+            result_text = interpret_score(normalized_score)
+            if normalized_score > 85:
+                st.markdown("""
+                <div style="background: linear-gradient(135deg, #28a745, #20c997); color: white; padding: 2rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+                    <h2 style="margin-bottom: 1rem;">🍉 MÜKEMMEL KARPUZ!</h2>
+                    <p style="font-size: 1.2rem; margin-bottom: 1rem;">Bu karpuz çok lezzetli olacak!</p>
+                    <h3 style="font-size: 2rem; margin: 0;">{normalized_score:.1f}/100</h3>
+                </div>
+                """, unsafe_allow_html=True)
+            elif normalized_score > 65:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #17a2b8, #6f42c1); color: white; padding: 2rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+                    <h2 style="margin-bottom: 1rem;">👍 İYİ KARPUZ</h2>
+                    <p style="font-size: 1.2rem; margin-bottom: 1rem;">Bu karpuz lezzetli olacak</p>
+                    <h3 style="font-size: 2rem; margin: 0;">{normalized_score:.1f}/100</h3>
+                </div>
+                """, unsafe_allow_html=True)
+            elif normalized_score > 45:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #ffc107, #fd7e14); color: white; padding: 2rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+                    <h2 style="margin-bottom: 1rem;">🤔 ORTA KARPUZ</h2>
+                    <p style="font-size: 1.2rem; margin-bottom: 1rem;">Bu karpuz orta lezzette olabilir</p>
+                    <h3 style="font-size: 2rem; margin: 0;">{normalized_score:.1f}/100</h3>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #dc3545, #e83e8c); color: white; padding: 2rem; border-radius: 15px; text-align: center; margin: 1rem 0;">
+                    <h2 style="margin-bottom: 1rem;">😞 DÜŞÜK KALİTE</h2>
+                    <p style="font-size: 1.2rem; margin-bottom: 1rem;">Bu karpuz lezzetsiz olabilir</p>
+                    <h3 style="font-size: 2rem; margin: 0;">{normalized_score:.1f}/100</h3>
+                </div>
+                """, unsafe_allow_html=True)
             
             # Puan grafiği
             fig = go.Figure(go.Indicator(
@@ -265,19 +300,8 @@ if analyze_btn and image1:
 
             fig.update_layout(height=300)
             st.plotly_chart(fig, use_container_width=True)
-
-            # Sonuç metni
-            result_text = interpret_score(normalized_score)
-            if normalized_score > 85:
-                st.success(f"## 🎉 {result_text}")
-            elif normalized_score > 65:
-                st.info(f"## 👍 {result_text}")
-            elif normalized_score > 45:
-                st.warning(f"## 🤔 {result_text}")
-            else:
-                st.error(f"## 😞 {result_text}")
             
-            # Detaylı sonuçlar - Sonda
+            # Detaylı sonuçlar - En sonda
             st.markdown("---")
             st.markdown("### 📊 Detaylı Analiz Sonuçları")
             
@@ -295,14 +319,6 @@ if analyze_btn and image1:
                 import pandas as pd
                 df = pd.DataFrame(result_data)
                 st.dataframe(df, use_container_width=True)
-            
-            st.markdown(f"""
-            <div class="result-card">
-                <h3>📈 Özet</h3>
-                <p><strong>Toplam Puan:</strong> <span class="score-{'high' if normalized_score > 85 else 'medium' if normalized_score > 65 else 'low'}">{normalized_score:.1f}/100</span></p>
-                <p><strong>Değerlendirme:</strong> {result_text}</p>
-            </div>
-            """, unsafe_allow_html=True)
         
     else:
         st.warning("❌ Genel görünüş fotoğrafı yüklenmedi.")
