@@ -71,7 +71,7 @@ st.markdown("""
 # Geri dönüş butonu
 col1, col2, col3 = st.columns([1, 2, 1])
 with col1:
-    st.page_link("/", label="← Ana Sayfaya Dön", use_container_width=True)
+    st.page_link("karpuz_sec_app.py", label="← Ana Sayfaya Dön", use_container_width=True)
 
 # Ana başlık
 st.markdown("""
