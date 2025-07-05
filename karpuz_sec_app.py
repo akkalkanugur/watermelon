@@ -264,8 +264,7 @@ st.plotly_chart(fig, use_container_width=True)
 # CTA Buton
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    if st.button("🚀 Analiz Yapmaya Başla", type="primary", use_container_width=True):
-        st.switch_page("pages/Analiz.py")
+    st.page_link("pages/Analiz.py", label="🚀 Analiz Yapmaya Başla", use_container_width=True)
 
 # Footer
 st.markdown("---")
